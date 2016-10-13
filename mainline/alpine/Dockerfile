@@ -21,6 +21,7 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		--http-scgi-temp-path=/var/cache/nginx/scgi_temp \
 		--user=nginx \
 		--group=nginx \
+		--add-module=/usr/src/nginx-auth-ldap-master \
 		--with-http_ssl_module \
 		--with-http_realip_module \
 		--with-http_addition_module \
@@ -67,15 +68,19 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		gd-dev \
 		geoip-dev \
 		perl-dev \
+		openldap-dev \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
 	&& export GNUPGHOME="$(mktemp -d)" \
 	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
 	&& gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
 	&& rm -r "$GNUPGHOME" nginx.tar.gz.asc \
+	&& curl -fSL https://github.com/kvspb/nginx-auth-ldap/archive/master.zip -o nginx-auth-ldap.zip \
 	&& mkdir -p /usr/src \
 	&& tar -zxC /usr/src -f nginx.tar.gz \
 	&& rm nginx.tar.gz \
+	&& unzip nginx-auth-ldap.zip -d /usr/src \
+	&& rm nginx-auth-ldap.zip \
 	&& cd /usr/src/nginx-$NGINX_VERSION \
 	&& ./configure $CONFIG --with-debug \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
@@ -103,6 +108,7 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& strip /usr/sbin/nginx* \
 	&& strip /usr/lib/nginx/modules/*.so \
 	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
+	&& rm -rf /usr/src/nginx-auth-ldap-master \
 	\
 	# Bring in gettext so we can get `envsubst`, then throw
 	# the rest away. To do this, we need to install `gettext`
